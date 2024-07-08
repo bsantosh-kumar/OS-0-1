@@ -1,22 +1,27 @@
+BUILD_DIR=build
 DISK=disk.img
-bootloader=load_os_from_mbr.bin
-OS=sanOS.bin
+bootloader=$(BUILD_DIR)/bootloader/load_os_from_mbr.bin
+OS=$(BUILD_DIR)/os/sanOS.bin
 
-BOOTLOADER_SRCS := $(wildcard *.asm)
-BOOTLOADER_OBJS := $(patsubst %.asm, %.bin, $(BOOTLOADER_SRCS))
 
 all: bootdisk
 
-.PHONY: all clean
+.PHONY: all clean bootloader os
 
-%.bin: %.asm
-	nasm -f bin $< -o $@
+bootloader:
+	make -C bootloader
+os:
+	make -C os
 
-bootdisk: $(BOOTLOADER_OBJS)
+bootdisk: bootloader os
 	dd if=/dev/zero of=$(DISK) bs=512 count=2880 
 	dd conv=notrunc if=$(bootloader) of=$(DISK) bs=512 count=1 seek=0
 	dd conv=notrunc if=$(OS) of=$(DISK) bs=512 count=1 seek=1
 
+qemu:
+	qemu-system-i386 -machine q35 -fda $(DISK) -gdb tcp::26000 -S
 
 clean:
-	rm -f *.bin 
+	make -C bootloader clean 
+	make -C os clean 
+	rm -rf $(BUILD_DIR) $(DISK)
