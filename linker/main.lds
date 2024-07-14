@@ -1,6 +1,6 @@
 ENTRY(main)
 PHDRS{
-	null PT_NULL;
+	null PT_NULL FILEHDR;
 	code PT_LOAD;
 }
 
